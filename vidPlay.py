@@ -20,26 +20,31 @@ except KeyboardInterrupt:
     exit()
 
 data = b""
-payload_size = struct.calcsize("L")
+payloadSize = struct.calcsize("L")
 
 while True:
-    while len(data) < payload_size:
-        packet = clientSock.recv(4 * 1024)
-        if not packet:
-            break
-        data += packet
+    try:
+        # Data Processing
+        while len(data) < payloadSize:
+            packet = clientSock.recv(4 * 1024)
+            if not packet:
+                break
+            data += packet
+        packedMsgSize = data[:payloadSize]
+        data = data[payloadSize:]
+        msgSize = struct.unpack("L", packedMsgSize)[0]
+        while len(data) < msgSize:
+            data += clientSock.recv(4 * 1024)
+        frameData = data[:msgSize]
+        data = data[msgSize:]
 
-    packed_msg_size = data[:payload_size]
-    data = data[payload_size:]
-    msg_size = struct.unpack("L", packed_msg_size)[0]
+        # Deserialize the frame and display it
+        frame = pickle.loads(frameData)
+        cv2.imshow("Received", frame)
+        cv2.waitKey(1)
+    except KeyboardInterrupt:
+        break
+    except struct.error:
+        break
 
-    while len(data) < msg_size:
-        data += clientSock.recv(4 * 1024)
-
-    frame_data = data[:msg_size]
-    data = data[msg_size:]
-
-    # Deserialize the frame and display it
-    frame = pickle.loads(frame_data)
-    cv2.imshow("Received", frame)
-    cv2.waitKey(1)
+clientSock.close()

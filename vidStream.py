@@ -13,7 +13,7 @@ import struct
 try:
     serverSock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     nodeIP = "0.0.0.0"  # Replace with your server's IP address
-    nodePort = int("[#] Enter stream port: ")
+    nodePort = int(input("[#] Enter stream port: "))
     serverSock.bind((nodeIP, nodePort))
     serverSock.listen(5)
     clientSock, ClientAddr = serverSock.accept()
@@ -31,12 +31,19 @@ print("[#] Received connection from:", ClientAddr)
 cap = cv2.VideoCapture(0)
 
 while True:
-    ret, frame = cap.read()
+    try:
+        ret, frame = cap.read()
 
-    # Serialize the frame
-    data = pickle.dumps(frame)
-    message_size = struct.pack("L", len(data))
+        # Serialize the frame
+        data = pickle.dumps(frame)
+        message_size = struct.pack("L", len(data))
 
-    # Send the frame size and frame data to the client
-    clientSock.sendall(message_size + data)
+        # Send the frame size and frame data to the client
+        clientSock.sendall(message_size + data)
+    except KeyboardInterrupt:
+        break
+    except ConnectionResetError:
+        break
+serverSock.close()
+clientSock.close()
 
